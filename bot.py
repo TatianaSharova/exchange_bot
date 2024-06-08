@@ -26,7 +26,7 @@ bot: Bot = Bot(token=API_TOKEN)
 async def send_welcome(message: types.Message):
     await message.reply("Привет! Я бот, который может предоставить информацию о стоимости выбранной криптовалюты в USD.\n"
                         "Нажми на кнопку 'Криптовалюты', чтобы перейти к нужной криптовалюте.\n"
-                        "Или нажми на кнопку 'Помощь', чтобы узнать о всех функциях бота.")
+                        "Если хочешь ознакомиться со всеми функциями бота, нажми на кнопку 'Помощь'.")
     # Создание клавиатуры
     kb = [
         [
@@ -37,6 +37,7 @@ async def send_welcome(message: types.Message):
     keyboard = types.ReplyKeyboardMarkup(
         keyboard=kb,
         resize_keyboard=True,
+        one_time_keyboard=True
         #input_field_placeholder=":)"
     )
     await message.answer("Выберите опцию:", reply_markup=keyboard)
@@ -45,29 +46,41 @@ async def send_welcome(message: types.Message):
 async def offer_famous_crypto(message: types.Message):
     await message.reply("Выбери необходимую криптовалюту.\n"
                         "Если нужной криптовалюты нет в списке, "
-                         "отправь боту сообщение с коротким названием криптовалюты,"
-                         "например, BTC или USDT")
+                        "отправь боту сообщение с коротким названием криптовалюты, "
+                        "например, BTC или USDT.")
     # Создание клавиатуры
-    kb = [
-        [
-            types.KeyboardButton(text="BTC"),
-            types.KeyboardButton(text="ETH"),
-            types.KeyboardButton(text="USDT"),
-            types.KeyboardButton(text="LTC"),
-            types.KeyboardButton(text="XLM"),
-            types.KeyboardButton(text="SOL"),
-            types.KeyboardButton(text="BNB"),
-            types.KeyboardButton(text="NOT"),
-            types.KeyboardButton(text="TON"),
-        ],
-    ]
-    keyboard = types.ReplyKeyboardMarkup(
-        keyboard=kb,
-        resize_keyboard=True,
-        #input_field_placeholder=":)"
+    builder = ReplyKeyboardBuilder()
+    crypto_symbols = ['BTC', 'ETH', 'USDT', 'LTC', 'XLM', 'SOL', 'BNB', 'NOT', 'TON']
+    for crypto in crypto_symbols:
+        builder.add(types.KeyboardButton(text=crypto))
+    builder.adjust(3)
+    await message.answer(
+        "Выберите криптовалюту:",
+        reply_markup=builder.as_markup(resize_keyboard=True),
     )
-    await message.answer("Выберите:", reply_markup=keyboard)
 
+@dp.message(F.text.lower() == "помощь")
+async def get_help(message: types.Message):
+    await message.reply("Этот бот может:\n"
+                        "1. Посмотреть стоимость выбранной крипты в USD.\n"
+                        "Для этого нажми кнопку 'Криптовалюты'.\n"
+                        "2. Начать отслеживать курс отдельных криптовалют, "
+                        "присылая уведомления, когда курс достигает выбранных вами значений.\n"
+                        "Для этого нажми на кнопку 'Подписка на крипту'.")
+    # Создание клавиатуры
+    builder = ReplyKeyboardBuilder()
+    crypto_symbols = ['Криптовалюты','Подписка на крипту']
+    for crypto in crypto_symbols:
+        builder.add(types.KeyboardButton(text=crypto))
+    builder.adjust(2)
+    await message.answer(
+        "Выберите:",
+        reply_markup=builder.as_markup(resize_keyboard=True),
+    )
+
+@dp.message(F.text.strip().lower() == "подписка на крипту")
+async def follow_crypto(message: types.Message):
+    await message.reply("Раздел пока в работе.")
 
 
 # Обработка сообщений с названием криптовалюты
