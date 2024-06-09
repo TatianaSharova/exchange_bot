@@ -1,0 +1,2 @@
+class HTTPResponseParsingError(Exception):
+    pass

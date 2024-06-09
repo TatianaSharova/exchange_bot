@@ -6,28 +6,31 @@ from aiogram import Bot, Dispatcher, types, Router, F
 from aiogram.filters.command import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 from dotenv import load_dotenv
+from exceptions import HTTPResponseParsingError
 
 load_dotenv()
 
 API_TOKEN = os.getenv('TEELEGRAM_TOKEN')
 COINMARKETCAP_API_KEY = os.getenv('COIN_MARKET_TOKEN')
-COINMARKETCAP_URL = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest'
+COINMARKETCAP_URL = 'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest'
 
-# Настройка логирования
+
 logging.basicConfig(level=logging.INFO)
+
 
 router: Router = Router()
 dp: Dispatcher = Dispatcher()
 bot: Bot = Bot(token=API_TOKEN)
 
-# Команда /start
+
 @dp.message(Command("start"))
-async def send_welcome(message: types.Message):
+async def send_welcome(message: types.Message) -> types.Message:
     await message.reply("Привет! Я бот, который может предоставить информацию о стоимости выбранной криптовалюты в USD.\n"
-                        "Нажми на кнопку 'Криптовалюты', чтобы перейти к нужной криптовалюте.\n"
-                        "Если хочешь ознакомиться со всеми функциями бота, нажми на кнопку 'Помощь'.")
-    # Создание клавиатуры
+                        "Нажми на кнопку <Криптовалюты>, чтобы перейти к нужной криптовалюте.\n"
+                        "Если хочешь ознакомиться со всеми функциями бота, нажми на кнопку <Помощь>.")
+
     kb = [
         [
             types.KeyboardButton(text="Криптовалюты"),
@@ -48,7 +51,7 @@ async def offer_famous_crypto(message: types.Message):
                         "Если нужной криптовалюты нет в списке, "
                         "отправь боту сообщение с коротким названием криптовалюты, "
                         "например, BTC или USDT.")
-    # Создание клавиатуры
+
     builder = ReplyKeyboardBuilder()
     crypto_symbols = ['BTC', 'ETH', 'USDT', 'LTC', 'XLM', 'SOL', 'BNB', 'NOT', 'TON']
     for crypto in crypto_symbols:
@@ -67,7 +70,7 @@ async def get_help(message: types.Message):
                         "2. Начать отслеживать курс отдельных криптовалют, "
                         "присылая уведомления, когда курс достигает выбранных вами значений.\n"
                         "Для этого нажми на кнопку 'Подписка на крипту'.")
-    # Создание клавиатуры
+
     builder = ReplyKeyboardBuilder()
     crypto_symbols = ['Криптовалюты','Подписка на крипту']
     for crypto in crypto_symbols:
@@ -83,7 +86,6 @@ async def follow_crypto(message: types.Message):
     await message.reply("Раздел пока в работе.")
 
 
-# Обработка сообщений с названием криптовалюты
 @router.message(F.text)
 async def send_crypto_price(message: types.Message):
     crypto_name = message.text.strip().upper()
@@ -104,12 +106,19 @@ def get_crypto_price(crypto_name):
         'convert': 'USD'
     }
     
-    response = requests.get(COINMARKETCAP_URL, headers=headers, params=params)
+    try:
+        response = requests.get(COINMARKETCAP_URL, headers=headers, params=params)
+    except (ConnectionError, Timeout, TooManyRedirects) as e:
+        raise Exception(e)                                                           #TODO Exception
     
     if response.status_code == 200:
-        data = response.json()
         try:
-            price = data['data'][crypto_name]['quote']['USD']['price']
+            data = response.json()
+        except requests.JSONDecodeError as error:
+            raise HTTPResponseParsingError(error)
+
+        try:
+            price = data['data'][crypto_name][0]['quote']['USD']['price']
             return price
             #return round(price, 2)
         except KeyError:
