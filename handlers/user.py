@@ -1,17 +1,8 @@
-import os
-
-import requests
 from aiogram import F, Router, types
 from aiogram.filters import CommandStart
-from dotenv import load_dotenv
-from exceptions import HTTPResponseParsingError
 from keyboards import reply
-from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
-
-load_dotenv()
-
-COINMARKETCAP_API_KEY = os.getenv('COIN_MARKET_TOKEN')
-COINMARKETCAP_URL = 'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest'
+from .utils import get_crypto_price
+from aiogram.enums import ParseMode
 
 
 user_canal_router = Router()
@@ -29,7 +20,7 @@ async def send_welcome(message: types.Message) -> types.Message:
 
 
 @user_canal_router.message(F.text.lower() == "криптовалюты")
-async def offer_famous_crypto(message: types.Message):
+async def offer_famous_crypto(message: types.Message) -> types.Message:
     await message.reply(
         "Выбери необходимую криптовалюту.\n"
         "Если нужной криптовалюты нет в списке, "
@@ -44,7 +35,7 @@ async def offer_famous_crypto(message: types.Message):
 
 
 @user_canal_router.message(F.text.lower() == "помощь")
-async def get_help(message: types.Message):
+async def get_help(message: types.Message) -> types.Message:
     await message.answer(
         "Этот бот может:\n"
         "1. Посмотреть стоимость выбранной крипты в USD.\n"
@@ -52,23 +43,52 @@ async def get_help(message: types.Message):
         "2. Начать отслеживать курс отдельных криптовалют, "
         "присылая уведомления, когда курс достигает выбранных вами значений.\n"
         "Для этого нажми на кнопку <Подписка на крипту>."
+        "3. Отменить подписку на криптовалюту.\n"
+        "Для этого нажми на кнопку <Отменить подписку>."
+        "4. Изменить подписку на криптовалюту.\n"
+        "Для этого нажми на кнопку <Изменить подписку>."
         )
 
-    await message.answer("Выберите:", reply_markup=reply.help_kb)
+    await message.answer(
+        "Выберите:",
+        reply_markup=reply.help_kb.as_markup(resize_keyboard=True)
+    )
 
 
 @user_canal_router.message(F.text.strip().lower() == "подписка на крипту")
-async def follow_crypto(message: types.Message):
-    await message.answer("Раздел пока в работе.")
+async def follow_crypto(message: types.Message) -> types.Message:
+    await message.answer(text=
+        "Вы можете подписаться на определенную стоимость криптовалюты в USD, "
+        "и когда криптовалюта достигнет этой стоимости или перешагнет этот порог,"
+        " мы пришлем вам уведомление.\n"
+        "\n"
+        "Вы можете подписаться на 2 заданных значения: MIN и MAX.\n"
+        "\n"
+        "Если стоимость криптовалюты станет равна или больше MAX: "
+        "мы пришлем уведомление об этом.\n"
+        "Если стоимость криптовалюты станет равна или меньше MIN: "
+        "мы пришлем уведомление об этом.\n"
+        "\n"
+        "Чтобы подписаться на MAX стоимость криптовалюты, отправьте боту сообщение вида:\n"
+        "<code>MAX BTC 67000</code>\n"
+        "или\n"
+        "<code>MAX NOT 0,02</code>\n"
+        "\n"
+        "Чтобы подписаться на MIN стоимость криптовалюты, отправьте боту сообщение вида:\n"
+        "<code>MIN BTC 65000</code>\n"
+        "или\n"
+        "<code>MIN NOT 0,009</code>",
+        parse_mode=ParseMode.HTML
+        )
 
 
 @user_canal_router.message(F.text)
-async def send_crypto_price(message: types.Message):
+async def send_crypto_price(message: types.Message) -> types.Message:
     crypto_name = message.text.strip().upper()
     if len(crypto_name) > 7:
-        await message.reply("Слишком длинное название. "
-                            "Проверьте правильность названия "
-                            "и попробуйте снова.")
+        await message.reply(
+            "Слишком длинное название. Проверьте правильность названия "
+            "и попробуйте снова.")
     else:
         price = get_crypto_price(crypto_name)
 
@@ -80,35 +100,11 @@ async def send_crypto_price(message: types.Message):
                 f"Проверьте правильность названия и попробуйте снова.")
 
 
-def get_crypto_price(crypto_name):
-    headers = {
-        'Accepts': 'application/json',
-        'X-CMC_PRO_API_KEY': COINMARKETCAP_API_KEY,
-    }
-    params = {
-        'symbol': crypto_name,
-        'convert': 'USD'
-    }
+@user_canal_router.message(F.text.strip().lower() == "отмена подписки")
+async def unfollow_crypto(message: types.Message) -> types.Message:
+    await message.answer('Раздел в работе.')
 
-    try:
-        response = requests.get(COINMARKETCAP_URL,
-                                headers=headers,
-                                params=params)
-    except (ConnectionError, Timeout, TooManyRedirects) as e:
-        raise Exception(e)                                                           #TODO Exception
 
-    if response.status_code == 200:
-        try:
-            data = response.json()
-        except requests.JSONDecodeError as error:
-            raise HTTPResponseParsingError(error)
-
-        try:
-            price = data['data'][crypto_name][0]['quote']['USD']['price']
-            if price:
-                return round(price, 2)
-            return price
-        except (KeyError, IndexError):
-            return None
-    else:
-        return None
+@user_canal_router.message(F.text.strip().lower() == "изменить подписку")
+async def unfollow_crypto(message: types.Message) -> types.Message:
+    await message.answer('Раздел в работе.')
