@@ -35,9 +35,9 @@ def get_crypto_price(crypto_name: str) -> float:
 
         try:
             price = data['data'][crypto_name][0]['quote']['USD']['price']
-            if price and price > 0.0001:
+            if price and price >= 0.001:
                 return round(price, 3)
-            if price and price < 0.0001:
+            if price and price < 0.001:
                 return f'{price:.10f}'
             return price
         except (KeyError, IndexError):
