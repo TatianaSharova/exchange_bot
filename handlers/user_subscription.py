@@ -10,6 +10,7 @@ user_subscription_router = Router()
 
 
 @user_subscription_router.message(Command("subscribe"))
+@user_subscription_router.message(F.text.strip().lower() == "подписка на крипту")
 async def subscribe_features(message: types.Message):
     await message.answer("Что хотите сделать?",
                          reply_markup=reply.subscription_kb.as_markup(resize_keyboard=True))

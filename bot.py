@@ -1,7 +1,7 @@
 import asyncio
 import os
 import logging
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, types
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
@@ -10,6 +10,7 @@ from middlewares.db import DataBaseSession
 from handlers.user import user_canal_router
 from handlers.user_subscription import user_subscription_router
 from database.engine import create_db, drop_db, session_maker
+from bot_cmds_list import bot_cmds
 
 
 API_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -44,6 +45,8 @@ async def main():
     dp.update.middleware(DataBaseSession(session_pool=session_maker))
 
     await bot.delete_webhook(drop_pending_updates=True)
+
+    await bot.set_my_commands(commands=bot_cmds, scope=types.BotCommandScopeAllPrivateChats())
 
     while True:
         await dp.start_polling(bot)
