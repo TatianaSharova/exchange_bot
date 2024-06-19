@@ -72,12 +72,12 @@ async def follow_crypto(message: types.Message) -> types.Message:
         "Чтобы подписаться на MAX стоимость криптовалюты, отправьте боту сообщение вида:\n"
         "<code>MAX BTC 67000</code>\n"
         "или\n"
-        "<code>MAX NOT 0,02</code>\n"
+        "<code>MAX NOT 0.02</code>\n"
         "\n"
         "Чтобы подписаться на MIN стоимость криптовалюты, отправьте боту сообщение вида:\n"
         "<code>MIN BTC 65000</code>\n"
         "или\n"
-        "<code>MIN NOT 0,009</code>",
+        "<code>MIN NOT 0.009</code>",
         parse_mode=ParseMode.HTML
         )
 
@@ -89,15 +89,16 @@ async def send_crypto_price(message: types.Message) -> types.Message:
         await message.reply(
             "Слишком длинное название. Проверьте правильность названия "
             "и попробуйте снова.")
-    else:
-        price = get_crypto_price(crypto_name)
+        return
 
-        if price:
-            await message.reply(f"Стоимость {crypto_name} в USD: ${price}")
-        else:
-            await message.reply(
-                f"Не удалось получить информацию о стоимости {crypto_name}. "
-                f"Проверьте правильность названия и попробуйте снова.")
+    price = get_crypto_price(crypto_name)
+
+    if price:
+        await message.reply(f"Стоимость {crypto_name} в USD: ${price}")
+    else:
+        await message.reply(
+            f"Не удалось получить информацию о стоимости {crypto_name}. "
+            f"Проверьте правильность названия и попробуйте снова.")
 
 
 @user_canal_router.message(F.text.strip().lower() == "отмена подписки")
