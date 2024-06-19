@@ -18,11 +18,17 @@ for crypto in crypto_symbols:
     crypto_kb.add(types.KeyboardButton(text=crypto))
 crypto_kb.adjust(3)
 
-help_kb = ReplyKeyboardBuilder()
-commands = ['Криптовалюты', 'Подписка на крипту', 'Отменить подписку', 'Изменить подписку']
-for command in commands:
-    help_kb.add(types.KeyboardButton(text=command))
-help_kb.adjust(2)
+
+help_kb = types.ReplyKeyboardMarkup(
+    keyboard=[
+        [
+            types.KeyboardButton(text="Криптовалюты"),
+            types.KeyboardButton(text="Подписка на крипту")
+        ]
+    ],
+    resize_keyboard=True,
+    one_time_keyboard=True
+    )
 
 
 value_kb = types.ReplyKeyboardMarkup(
