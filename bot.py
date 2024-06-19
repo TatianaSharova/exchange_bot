@@ -22,7 +22,8 @@ logging.basicConfig(level=logging.INFO)
 
 dp: Dispatcher = Dispatcher()
 bot: Bot = Bot(token=API_TOKEN)
-dp.include_routers(user_canal_router, user_subscription_router)
+dp.include_router(user_subscription_router)
+dp.include_router(user_canal_router)
 
 async def on_startup(bot):
 
