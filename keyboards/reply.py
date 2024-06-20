@@ -48,10 +48,6 @@ subscription_kb.row(
     types.KeyboardButton(text="Подписаться на крипту")
     )
 subscription_kb.row(
-    types.KeyboardButton(text="Изменить подписку"),
-    types.KeyboardButton(text="Отменить подписку"),
-    )
-subscription_kb.row(
     types.KeyboardButton(text="Проверить подписку")
     )
 
