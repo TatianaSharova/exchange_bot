@@ -10,7 +10,10 @@ from .utils import get_crypto_price
 from database.models import Data
 from database.orm_query import (orm_add_subscription, orm_get_user_subscriptions,
                                 orm_get_user_subscription, orm_update_subscription,
-                                orm_delete_subscription)
+                                orm_delete_subscription, orm_add_subscription_min,
+                                orm_add_subscription_max)
+
+from sqlalchemy.exc import ResourceClosedError
 
 
 user_subscription_router = Router()
@@ -82,6 +85,12 @@ async def change_subscription(
     sub_id = callback.data.split("_")[-1]
 
     sub_for_change = await orm_get_user_subscription(session, int(sub_id))
+    
+    crypto_name = sub_for_change.crypto
+    
+    await state.set_state(AddSubscription.crypto)
+    await state.update_data(crypto=crypto_name)
+        
 
     AddSubscription.sub_for_change = sub_for_change
     await callback.answer()
@@ -105,7 +114,7 @@ async def delete_subscription(callback: types.CallbackQuery, session: AsyncSessi
     await orm_delete_subscription(session, int(sub_id))
 
     await callback.answer()
-    await callback.message.answer("Вы отписались!!")
+    await callback.message.answer("Вы отписались!")
 
 
 @user_subscription_router.message(StateFilter(None), F.text.strip().lower() == "подписаться на крипту")
@@ -115,22 +124,35 @@ async def subscribe(message: types.Message, state: FSMContext):
     )
     await state.set_state(AddSubscription.crypto)
 
-
-@user_subscription_router.message(StateFilter('*'), F.text.casefold() == "отмена")
+@user_subscription_router.message(AddSubscription.max_val, F.text.casefold() == "отмена")
+@user_subscription_router.message(AddSubscription.min_val, F.text.casefold() == "отмена")
 async def cancel_handler(
     message: types.Message, state: FSMContext, session: AsyncSession
     ) -> None:
 
     data = await state.get_data()
-    try:
-        orm_add_subscription(session, data, message)
-    except Exception as error:                                                        # TODO Exception
-        await message.answer(
-        f"Error:\n"
-        f"{error}"
-    )
+    state_ = await state.get_state()
+    if state_ == AddSubscription.min_val:
+        try:
+            if AddSubscription.sub_for_change:
+                await orm_update_subscription(session, AddSubscription.sub_for_change.id, data)
+            else:
+                await orm_add_subscription_min(session, data, message)
+        except Exception as err:
+            await message.answer(f'Error:\n'
+                                 f'{err}')
+    else:
+        try:
+            if AddSubscription.sub_for_change:
+                await orm_update_subscription(session, AddSubscription.sub_for_change.id, data)
+            else:
+                await orm_add_subscription_max(session, data, message)
+        except Exception as err:
+            await message.answer(f'Error:\n'
+                                 f'{err}')
 
     await state.clear()
+    AddSubscription.sub_for_change = None
     await message.answer("Хорошо, закончим на этом!\n"
                          'Вы подписались!',
                          reply_markup=reply.subscription_kb.as_markup(resize_keyboard=True))
@@ -219,13 +241,16 @@ async def save_min_price(message: types.Message, state: FSMContext, session: Asy
         return
     
     try:
-        orm_add_subscription(session, data, message)
-    except Exception as error:                                                        # TODO Exception
+        if AddSubscription.sub_for_change:
+            await orm_update_subscription(session, AddSubscription.sub_for_change.id, data)
+        else:
+            await orm_add_subscription(session, data, message)
+    except Exception as error:
         await message.answer(
         f"Error:\n"
         f"{error}"
     )
-    
+    AddSubscription.sub_for_change = None
     await state.clear()
 
 
@@ -249,15 +274,6 @@ async def save_max_price(message: types.Message,
 
     try:
         data['min_val']
-        obj = Data(
-            user_id = message.from_user.id,
-            crypto = data['crypto'],
-            max_val = data['max_val'],
-            min_val = data['min_val']
-        )
-        session.add(obj)
-        await session.commit()
-        await state.clear()
     except KeyError as error:
         await message.answer(
             f"Хотите подписаться на MIN стоимость {crypto_name}?\n"
@@ -265,3 +281,16 @@ async def save_max_price(message: types.Message,
             reply_markup=reply.plus_min_price_kb
         )
         return
+    
+    try:
+        if AddSubscription.sub_for_change:
+            await orm_update_subscription(session, AddSubscription.sub_for_change.id, data)
+        else:
+            await orm_add_subscription(session, data, message)
+    except Exception as error:                                                        # TODO Exception
+        await message.answer(
+        f"Error:\n"
+        f"{error}"
+    )
+    AddSubscription.sub_for_change = None
+    await state.clear()
