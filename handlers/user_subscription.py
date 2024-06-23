@@ -6,14 +6,12 @@ from keyboards import reply
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from keyboards.inline import get_callback_btns
-from .utils import get_crypto_price
+from .utils import get_crypto_price, get_float_price
 from database.models import Data
 from database.orm_query import (orm_add_subscription, orm_get_user_subscriptions,
                                 orm_get_user_subscription, orm_update_subscription,
                                 orm_delete_subscription, orm_add_subscription_min,
                                 orm_add_subscription_max)
-
-from sqlalchemy.exc import ResourceClosedError
 
 
 user_subscription_router = Router()
@@ -53,16 +51,16 @@ async def check_subscription(message: types.Message, session: AsyncSession):
     for sub in subscriptions:
         if sub.min_val and sub.max_val:
             await message.answer(f"{sub.crypto}\n"
-                                 f'Верхняя цена в USD: $: {sub.max_val}\n'
-                                 f'Нижняя цена в USD: $: {sub.min_val}',
+                                 f'Верхняя цена в USD: $: {get_float_price(sub.max_val)}\n'
+                                 f'Нижняя цена в USD: $: {get_float_price(sub.min_val)}',
                                  reply_markup=get_callback_btns(
                                      btns={
                                          "Отписаться": f"delete_{sub.id}",
                                          "Изменить": f"change_{sub.id}",
                                      }))
-        elif sub.min_val:
+        elif sub.max_val:
             await message.answer(f"{sub.crypto}\n"
-                                 f'Нижняя цена в USD: $: {sub.min_val}',
+                                 f'Верхняя цена в USD: $: {get_float_price(sub.max_val)}',
                                  reply_markup=get_callback_btns(
                                      btns={
                                          "Отписаться": f"delete_{sub.id}",
@@ -70,7 +68,7 @@ async def check_subscription(message: types.Message, session: AsyncSession):
                                      }))
         else:
             await message.answer(f"{sub.crypto}\n"
-                                 f'Верхняя цена в USD: $: {sub.max_val}',
+                                 f'Нижняя цена в USD: $: {get_float_price(sub.min_val)}',
                                  reply_markup=get_callback_btns(
                                      btns={
                                          "Отписаться": f"delete_{sub.id}",
@@ -124,8 +122,22 @@ async def subscribe(message: types.Message, state: FSMContext):
     )
     await state.set_state(AddSubscription.crypto)
 
-@user_subscription_router.message(AddSubscription.max_val, F.text.casefold() == "отмена")
-@user_subscription_router.message(AddSubscription.min_val, F.text.casefold() == "отмена")
+
+@user_subscription_router.message(StateFilter("*"), Command("отмена"))
+@user_subscription_router.message(StateFilter("*"), F.text.casefold() == "отмена")
+async def cancel_handler(message: types.Message, state: FSMContext) -> None:
+    current_state = await state.get_state()
+    if current_state is None:
+        return
+    if AddSubscription.sub_for_change:
+        AddSubscription.sub_for_change = None
+    await state.clear()
+    await message.answer("Действия отменены",
+                         reply_markup=reply.subscription_kb.as_markup(resize_keyboard=True))
+
+
+@user_subscription_router.message(AddSubscription.max_val, F.text.casefold() == "закончить")
+@user_subscription_router.message(AddSubscription.min_val, F.text.casefold() == "закончить")
 async def cancel_handler(
     message: types.Message, state: FSMContext, session: AsyncSession
     ) -> None:
@@ -294,3 +306,4 @@ async def save_max_price(message: types.Message,
     )
     AddSubscription.sub_for_change = None
     await state.clear()
+
