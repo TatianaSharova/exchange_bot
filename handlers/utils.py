@@ -10,6 +10,15 @@ COINMARKETCAP_API_KEY = os.getenv('COIN_MARKET_TOKEN')
 COINMARKETCAP_URL = 'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest'
 
 
+def get_float_price(price):
+    if price and price >= 0.001:
+        return round(price, 3)
+    elif price and price < 0.001:
+        return f'{price:.10f}'
+    else:
+        return None
+
+
 def get_crypto_price(crypto_name: str) -> float:
     headers = {
         'Accepts': 'application/json',
@@ -35,12 +44,9 @@ def get_crypto_price(crypto_name: str) -> float:
 
         try:
             price = data['data'][crypto_name][0]['quote']['USD']['price']
-            if price and price >= 0.001:
-                return round(price, 3)
-            if price and price < 0.001:
-                return f'{price:.10f}'
-            return price
+            return get_float_price(price)
         except (KeyError, IndexError):
             return None
     else:
         return None
+
