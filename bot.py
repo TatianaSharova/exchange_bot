@@ -56,7 +56,7 @@ async def check_prices(session: AsyncSession, bot: Bot):
                 current_price = get_crypto_price(sub.crypto)
                 if (sub.min_val and current_price <= sub.min_val) or (sub.max_val and current_price >= sub.max_val):
                     message = f"Стоимость {sub.crypto} достигла цели! Цена в данный момент: ${current_price}"
-                    if (sub.last_message and sub.last_message != message):
+                    if sub.last_message != message:
                         await bot.send_message(sub.user_id, message)
                         sub.last_message = message
                         session.add(sub)                                                 # TODO update
