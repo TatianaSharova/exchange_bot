@@ -56,7 +56,7 @@ plus_max_price_kb = types.ReplyKeyboardMarkup(
     keyboard=[
         [
             types.KeyboardButton(text="MAX"),
-            types.KeyboardButton(text="Отмена")
+            types.KeyboardButton(text="Закончить")
         ]
     ],
     resize_keyboard=True,
@@ -68,7 +68,7 @@ plus_min_price_kb = types.ReplyKeyboardMarkup(
     keyboard=[
         [
             types.KeyboardButton(text="MIN"),
-            types.KeyboardButton(text="Отмена")
+            types.KeyboardButton(text="Закончить")
         ]
     ],
     resize_keyboard=True,
