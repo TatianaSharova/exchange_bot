@@ -64,14 +64,17 @@ async def orm_update_subscription(session: AsyncSession, product_id: int, data):
     try:
         query = update(Data).where(Data.id == product_id).values(
             max_val = data['max_val'],
-            min_val = data['min_val'])
+            min_val = data['min_val'],
+            last_message = None)
     except KeyError as err:
         try:
             query = update(Data).where(Data.id == product_id).values(
-            max_val = data['max_val'])
+            max_val = data['max_val'],
+            last_message = None)
         except KeyError as err:
             query = update(Data).where(Data.id == product_id).values(
-            max_val = data['min_val'])
+            max_val = data['min_val'],
+            last_message = None)
     finally:
         await session.execute(query)
         await session.commit()
