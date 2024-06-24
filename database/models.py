@@ -1,7 +1,7 @@
 from typing import Optional
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+
+from sqlalchemy import Float, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import String, Float, Integer, Text
 
 
 class Base(DeclarativeBase):
@@ -9,6 +9,10 @@ class Base(DeclarativeBase):
 
 
 class Data(Base):
+    '''
+    Модель для хранения информации о подписке пользователя
+    на определенную валюту.
+    '''
     __tablename__ = 'data'
 
     id: Mapped[int] = mapped_column(primary_key=True,
