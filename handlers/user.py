@@ -1,7 +1,8 @@
 from aiogram import F, Router, types
-from aiogram.filters import Command, CommandStart
-from keyboards import reply
 from aiogram.enums.parse_mode import ParseMode
+from aiogram.filters import Command, CommandStart
+
+from keyboards import reply
 
 from .utils import get_crypto_price
 
@@ -11,21 +12,30 @@ user_canal_router = Router()
 @user_canal_router.message(CommandStart())
 async def send_welcome(message: types.Message) -> types.Message:
     await message.answer(
-        'Теперь я буду помогать тебе отслеживать стоимость криптовалют в USD!\n'
+        'Теперь я буду помогать тебе отслеживать стоимость криптовалют'
+        ' в USD!\n'
         '\n'
         'Расскажу немного подробнее о том, что я могу делать:\n'
         '\n'
         '1. <b>Проверять курс</b>:\n'
-        'Скажите мне название криптовалюты, и я покажу ее текущую стоимость.\n'
+        'Скажите мне название криптовалюты, и я покажу ее текущую '
+        'стоимость.\n'
         '\n'
         '2. <b>Отправлять уведомления</b>:\n'
-        '    - Установите минимальную и/или максимальную цену криптовалюты.\n'
-        '    - Я пришлю сообщение, когда цена станет ниже или выше заданного '
-        'вами значения.\n'
+        '        - Установите минимальную(MIN) и/или максимальную(MAX) '
+        'цену криптовалюты.\n'
+        '        - Я пришлю сообщение, когда цена станет ниже или выше'
+        ' заданных вами значений.\n'
         '\n'
         '<i>Пример</i>:\n'
-        'Хотите узнать, когда Bitcoin станет дешевле $60,000 или дороже $70,000?\n'
-        'Установите эти значения, и я сообщу вам, когда это произойдет.\n',
+        '\n'
+        'Хотите узнать, когда Bitcoin станет дешевле $60,000 или дороже '
+        '$70,000?\n'
+        'Установите эти значения, и я сообщу вам, когда это произойдет.\n'
+        '\n'
+        'Если вы хотите подробнее узнать о функциях бота и о том, как '
+        'устроена подписка '
+        'на стоимоcть криптовалют, нажмите на кнопку <code>Помощь</code>.',
         parse_mode=ParseMode.HTML
         )
 
@@ -36,11 +46,11 @@ async def send_welcome(message: types.Message) -> types.Message:
         'Для просмотра стоимости криптовалют нажмите на кнопку: \n'
         '<code>Криптовалюты</code>\n'
         '\n'
-        'Для оформления подписки на стоимость криптовалют'
+        'Для подписки на стоимость криптовалют '
         'нажмите на кнопку: \n'
         '<code>Подписка на крипту</code>\n',
         parse_mode=ParseMode.HTML,
-        reply_markup=reply.help_kb)
+        reply_markup=reply.start_kb.as_markup(resize_keyboard=True))
 
 
 @user_canal_router.message(Command('check_price'))
@@ -79,11 +89,15 @@ async def get_help(message: types.Message) -> types.Message:
         '\n'
         'Чтобы оформить подписку и управлять ей, '
         'нажми на кнопку:\n'
-        '<code>Подписка на крипту</code>\n',
+        '<code>Подписка на крипту</code>\n'
+        '\n'
+        '3. Если вы запутались или хотите отменить ваши действия, '
+        'напишите боту слово "отмена" или выберите команду'
+        ' "Отменить действие" в меню.',
         parse_mode=ParseMode.HTML,
         )
 
-    await message.answer('Выберите:', reply_markup=reply.help_kb)
+    await message.answer('Что вас интересует?', reply_markup=reply.help_kb)
 
 
 @user_canal_router.message(F.text)

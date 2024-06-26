@@ -1,8 +1,10 @@
 from aiogram import F, Router, types
-from aiogram.filters import Command, StateFilter, or_f
 from aiogram.enums.parse_mode import ParseMode
+from aiogram.filters import Command, StateFilter, or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from database.orm_query import (orm_add_subscription, orm_add_subscription_max,
                                 orm_add_subscription_min,
                                 orm_delete_subscription,
@@ -11,13 +13,13 @@ from database.orm_query import (orm_add_subscription, orm_add_subscription_max,
                                 orm_update_subscription)
 from keyboards import reply
 from keyboards.inline import get_callback_btns
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from .utils import get_crypto_price, get_float_price
+from .utils import get_crypto_price, get_float_price, validate_price
 
 user_subscription_router = Router()
 
 
+# FSM
 class AddSubscription(StatesGroup):
 
     crypto = State()
@@ -113,15 +115,16 @@ async def delete_subscription(callback: types.CallbackQuery,
     await orm_delete_subscription(session, int(sub_id))
 
     await callback.answer()
-    await callback.message.answer("Вы отписались!")
+    await callback.message.answer('Вы отписались!')
 
 
 @user_subscription_router.message(
-        StateFilter(None), F.text.strip().lower() == "подписаться на крипту")
+        StateFilter(None), F.text.strip().lower() == 'подписаться на крипту')
 async def subscribe(message: types.Message, state: FSMContext):
     await message.answer(
-        "Введите короткое название криптовалюты вида BTC или ETH.",
-        reply_markup=types.ReplyKeyboardRemove()
+        'Введите короткое название криптовалюты, на которую хотите'
+        ' подписаться, или выберите из представленных:',
+        reply_markup=reply.crypto_kb.as_markup(resize_keyboard=True)
     )
     await state.set_state(AddSubscription.crypto)
 
@@ -213,8 +216,8 @@ async def add_crypto_name(message: types.Message,
     crypto_name = message.text.strip().upper()
     if len(crypto_name) > 7:
         await message.reply(
-            "Слишком длинное название. Проверьте правильность названия "
-            "и попробуйте снова.")
+            'Слишком длинное название.\n'
+            'Введите короткое имя криптовалюты вида BTC или SOL:')
         return
     subscriptions = await orm_get_user_subscriptions(session, message)
     for sub in subscriptions:
@@ -236,7 +239,9 @@ async def add_crypto_name(message: types.Message,
 
     await state.update_data(crypto=crypto_name)
     await message.answer(
-        "На какую цену хотите подписаться: MIN или MAX?",
+        f'Стоимость {crypto_name} в данный момент: ${price}.\n'
+        f'\n'
+        f'На какую цену хотите подписаться: MIN или MAX?',
         reply_markup=reply.value_kb
     )
 
@@ -244,10 +249,9 @@ async def add_crypto_name(message: types.Message,
 @user_subscription_router.message(AddSubscription.min_val, F.text)
 async def save_min_price(message: types.Message, state: FSMContext,
                          session: AsyncSession):
-    try:
-        float(message.text)
-    except ValueError:
-        await message.answer("Введите корректное значение цены.")
+
+    validation = await validate_price(message)
+    if not validation:
         return
 
     await state.update_data(min_val=message.text)
@@ -300,10 +304,9 @@ async def save_min_price(message: types.Message, state: FSMContext,
 async def save_max_price(message: types.Message,
                          state: FSMContext,
                          session: AsyncSession):
-    try:
-        float(message.text)
-    except ValueError:
-        await message.answer("Введите корректное значение цены:")
+
+    validation = await validate_price(message)
+    if not validation:
         return
 
     await state.update_data(max_val=message.text)
