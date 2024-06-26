@@ -10,10 +10,10 @@
 Напишите боту короткое название криптовалюты, например BTC или ETH, и вам придет ответ с её стоимостью на данный момент.  
 
 2. Отправлять уведомления:  
-Установите минимальную(MIN) и/или максимальную(MAX) цену для криптовалюты.
+Установите минимальную(MIN) и/или максимальную(MAX) цену для криптовалюты.  
 Бот пришлёт сообщение, когда цена станет ниже или выше заданного вами значения.  
 
-Пример:
+Пример:  
 Хотите узнать, когда Bitcoin станет дешевле $60,000 или дороже $70,000? Установите эти значения, и бот сообщит вам, когда это произойдет.
 
 
@@ -26,9 +26,9 @@ git@github.com:TatianaSharova/exchange_bot.git
 **_В директории проекта создать файл .env и заполнить своими данными:_**
 ```
 TELEGRAM_BOT_TOKEN         - токен вашего телеграм бота
-COIN_MARKET_TOKEN          - токеy от API криптовалютной биржи CoinMarket
-DB_LITE                    - sqlite+aiosqlite:///bot_base.db
-COINMARKETCAP_URL          - https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest
+COIN_MARKET_TOKEN          - токен от API криптовалютной биржи CoinMarket
+DB_LITE                    - 'sqlite+aiosqlite:///bot_base.db'
+COINMARKETCAP_URL          - 'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest'
 ```
 **_Создать и активировать виртуальное окружение:_**
 
