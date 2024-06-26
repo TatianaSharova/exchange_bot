@@ -2,8 +2,11 @@
 
 [![Python](https://img.shields.io/badge/-Python-464646?style=flat-square&logo=Python)](https://www.python.org/)
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://core.telegram.org/)
+![SQLite](https://a11ybadges.com/badge?logo=sqlite)
 
 Телеграм бот с trashhold системой, который может предоставить информацию о стоимости выбранной криптовалюты в USD и оформить подписку на стоимость криптовалют.
+
+Стек: aiogram, SQLalchemy, telegram, SQLite, python
 
 ## Возможности бота:
 1. Проверить курс любой криптовалюты:  
