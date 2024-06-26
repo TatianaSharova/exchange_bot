@@ -56,5 +56,4 @@ python bot.py
 ```
 
 ### Автор
-Татьяна Шарова
-
+[Татьяна Шарова](https://github.com/TatianaSharova)
