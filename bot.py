@@ -50,8 +50,8 @@ async def check_prices(session: AsyncSession, bot: Bot):
                     if sub.last_message != last_message_about:
                         await bot.send_message(
                             sub.user_id,
-                            f'Стоимость {sub.crypto} достигла нижнего '
-                            f'порога в ${sub.min_val}!\n'
+                            f'Стоимость {sub.crypto} перешла нижний '
+                            f'порог в ${sub.min_val}!\n'
                             f'Цена в данный момент: ${current_price}')
                         sub.last_message = last_message_about
                         session.add(sub)
@@ -61,8 +61,8 @@ async def check_prices(session: AsyncSession, bot: Bot):
                     if sub.last_message != last_message_about:
                         await bot.send_message(
                             sub.user_id,
-                            f'Стоимость {sub.crypto} достигла верхнего '
-                            f'порога в ${sub.max_val}!\n'
+                            f'Стоимость {sub.crypto} перешла верхний '
+                            f'порог в ${sub.max_val}!\n'
                             f'Цена в данный момент: ${current_price}')
                         sub.last_message = last_message_about
                         session.add(sub)
