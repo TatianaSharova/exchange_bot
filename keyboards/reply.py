@@ -1,6 +1,15 @@
 from aiogram import types
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
+start_kb = ReplyKeyboardBuilder()
+start_kb.row(
+    types.KeyboardButton(text='Криптовалюты'),
+    types.KeyboardButton(text='Подписка на крипту')
+)
+start_kb.row(
+    types.KeyboardButton(text='Помощь')
+)
+
 
 crypto_kb = ReplyKeyboardBuilder()
 crypto_symbols = [
