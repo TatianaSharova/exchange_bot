@@ -3,12 +3,14 @@ import logging
 import os
 
 from aiogram import Bot, Dispatcher, types
+from aiogram.exceptions import TelegramForbiddenError
 from dotenv import load_dotenv
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.engine import create_db, drop_db, session_maker
 from database.models import Data
+from database.orm_query import orm_delete_user
 from handlers.user import user_canal_router
 from handlers.user_subscription import user_subscription_router
 from handlers.utils import get_crypto_price
@@ -36,7 +38,8 @@ dp.include_router(user_canal_router)
 async def check_prices(session: AsyncSession, bot: Bot):
     '''
     Присылает сообщение пользователю, если цена криптовалюты достигла значений,
-    на которые он подписан.
+    на которые он подписан. Если пользователь заблокировал бота,
+    данные о нем из бд удаляются.
     '''
     while True:
         async with session_maker() as session:
@@ -48,25 +51,32 @@ async def check_prices(session: AsyncSession, bot: Bot):
                 if sub.min_val and float(current_price) <= sub.min_val:
                     last_message_about = 'MIN'
                     if sub.last_message != last_message_about:
-                        await bot.send_message(
-                            sub.user_id,
-                            f'Стоимость {sub.crypto} перешла нижний '
-                            f'порог в ${sub.min_val}!\n'
-                            f'Цена в данный момент: ${current_price}')
-                        sub.last_message = last_message_about
-                        session.add(sub)
-                        await session.commit()
+                        try:
+                            await bot.send_message(
+                                sub.user_id,
+                                f'Стоимость {sub.crypto} перешла нижний '
+                                f'порог в ${sub.min_val}!\n'
+                                f'Цена в данный момент: ${current_price}')
+                            sub.last_message = last_message_about
+                            session.add(sub)
+                            await session.commit()
+                        except TelegramForbiddenError:
+                            await orm_delete_user(session, sub.user_id)
+
                 if sub.max_val and float(current_price) >= sub.max_val:
                     last_message_about = 'MAX'
                     if sub.last_message != last_message_about:
-                        await bot.send_message(
-                            sub.user_id,
-                            f'Стоимость {sub.crypto} перешла верхний '
-                            f'порог в ${sub.max_val}!\n'
-                            f'Цена в данный момент: ${current_price}')
-                        sub.last_message = last_message_about
-                        session.add(sub)
-                        await session.commit()
+                        try:
+                            await bot.send_message(
+                                sub.user_id,
+                                f'Стоимость {sub.crypto} перешла верхний '
+                                f'порог в ${sub.max_val}!\n'
+                                f'Цена в данный момент: ${current_price}')
+                            sub.last_message = last_message_about
+                            session.add(sub)
+                            await session.commit()
+                        except TelegramForbiddenError:
+                            await orm_delete_user(session, sub.user_id)
 
             await asyncio.sleep(60)
 
