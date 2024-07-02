@@ -91,3 +91,10 @@ async def orm_delete_subscription(session: AsyncSession, product_id: int):
     query = delete(Data).where(Data.id == product_id)
     await session.execute(query)
     await session.commit()
+
+
+async def orm_delete_user(session: AsyncSession, user_id: int):
+    '''Удалить пользователя из базы данных.'''
+    query = delete(Data).where(Data.user_id == user_id)
+    await session.execute(query)
+    await session.commit()
