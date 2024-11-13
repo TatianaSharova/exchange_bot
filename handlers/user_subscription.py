@@ -45,45 +45,45 @@ async def check_subscription(message: types.Message, session: AsyncSession):
         await message.answer('У вас нет активных подписок.\n'
                              'Это легко исправить! :)')
         return
-    await message.answer("Вот ваши подписки:")
+    await message.answer('Вот ваши подписки:')
     for sub in subscriptions:
         if sub.min_val and sub.max_val:
-            await message.answer(f"{sub.crypto}\n"
+            await message.answer(f'{sub.crypto}\n'
                                  f'Верхняя цена в USD: $'
-                                 f'{get_float_price(sub.max_val)}\n'
+                                 f'{await get_float_price(sub.max_val)}\n'
                                  f'Нижняя цена в USD: $'
-                                 f'{get_float_price(sub.min_val)}',
+                                 f'{await get_float_price(sub.min_val)}',
                                  reply_markup=get_callback_btns(
                                      btns={
-                                         "Отписаться": f"delete_{sub.id}",
-                                         "Изменить": f"change_{sub.id}",
+                                         'Отписаться': f'delete_{sub.id}',
+                                         'Изменить': f'change_{sub.id}',
                                      }))
         elif sub.max_val:
             await message.answer(f"{sub.crypto}\n"
                                  f'Верхняя цена в USD: $'
-                                 f'{get_float_price(sub.max_val)}',
+                                 f'{await get_float_price(sub.max_val)}',
                                  reply_markup=get_callback_btns(
                                      btns={
-                                         "Отписаться": f"delete_{sub.id}",
-                                         "Изменить": f"change_{sub.id}",
+                                         'Отписаться': f'delete_{sub.id}',
+                                         'Изменить': f'change_{sub.id}',
                                      }))
         else:
-            await message.answer(f"{sub.crypto}\n"
+            await message.answer(f'{sub.crypto}\n'
                                  f'Нижняя цена в USD: $'
-                                 f'{get_float_price(sub.min_val)}',
+                                 f'{await get_float_price(sub.min_val)}',
                                  reply_markup=get_callback_btns(
                                      btns={
-                                         "Отписаться": f"delete_{sub.id}",
-                                         "Изменить": f"change_{sub.id}",
+                                         'Отписаться': f'delete_{sub.id}',
+                                         'Изменить': f'change_{sub.id}',
                                      }))
 
 
 @user_subscription_router.callback_query(StateFilter(None),
-                                         F.data.startswith("change_"))
+                                         F.data.startswith('change_'))
 async def change_subscription(
     callback: types.CallbackQuery, state: FSMContext, session: AsyncSession
 ):
-    sub_id = callback.data.split("_")[-1]
+    sub_id = callback.data.split('_')[-1]
 
     sub_for_change = await orm_get_user_subscription(session, int(sub_id))
 
@@ -96,22 +96,22 @@ async def change_subscription(
     await callback.answer()
     if sub_for_change.min_val:
         await callback.message.answer(
-            f"Введите нижнюю стоимость {sub_for_change.crypto} в USD:",
+            f'Введите нижнюю стоимость {sub_for_change.crypto} в USD:',
             reply_markup=types.ReplyKeyboardRemove()
         )
         await state.set_state(AddSubscription.min_val)
     else:
         await callback.message.answer(
-            f"Введите верхнюю стоимость {sub_for_change.crypto} в USD:",
+            f'Введите верхнюю стоимость {sub_for_change.crypto} в USD:',
             reply_markup=types.ReplyKeyboardRemove()
         )
         await state.set_state(AddSubscription.max_val)
 
 
-@user_subscription_router.callback_query(F.data.startswith("delete_"))
+@user_subscription_router.callback_query(F.data.startswith('delete_'))
 async def delete_subscription(callback: types.CallbackQuery,
                               session: AsyncSession):
-    sub_id = callback.data.split("_")[-1]
+    sub_id = callback.data.split('_')[-1]
     await orm_delete_subscription(session, int(sub_id))
 
     await callback.answer()
@@ -130,10 +130,10 @@ async def subscribe(message: types.Message, state: FSMContext):
 
 
 @user_subscription_router.message(
-        StateFilter("*"), Command("cancel"))
+        StateFilter('*'), Command('cancel'))
 @user_subscription_router.message(
-    StateFilter("*"), or_f(F.text.casefold() == "отмена",
-                           F.text.casefold() == "cancel"))
+    StateFilter('*'), or_f(F.text.casefold() == 'отмена',
+                           F.text.casefold() == 'cancel'))
 async def cancel_handler(message: types.Message, state: FSMContext) -> None:
     current_state = await state.get_state()
     if current_state is None:
@@ -148,7 +148,7 @@ async def cancel_handler(message: types.Message, state: FSMContext) -> None:
 
 @user_subscription_router.message(
         or_f(AddSubscription.max_val, AddSubscription.min_val),
-        F.text.casefold() == "закончить")
+        F.text.casefold() == 'закончить')
 async def end_sub_handler(
     message: types.Message, state: FSMContext, session: AsyncSession
 ) -> None:
@@ -184,26 +184,26 @@ async def end_sub_handler(
         reply_markup=reply.subscription_kb.as_markup(resize_keyboard=True))
 
 
-@user_subscription_router.message(AddSubscription.max_val, F.text == "MIN")
-@user_subscription_router.message(AddSubscription.crypto, F.text == "MIN")
+@user_subscription_router.message(AddSubscription.max_val, F.text == 'MIN')
+@user_subscription_router.message(AddSubscription.crypto, F.text == 'MIN')
 async def add_min_price(message: types.Message, state: FSMContext):
     data = await state.get_data()
     crypto_name = data['crypto']
     await message.answer(
-        f"Введите нижнюю стоимость {crypto_name} в USD:",
+        f'Введите нижнюю стоимость {crypto_name} в USD:',
         reply_markup=types.ReplyKeyboardRemove()
     )
     await state.set_state(AddSubscription.min_val)
 
 
-@user_subscription_router.message(AddSubscription.min_val, F.text == "MAX")
+@user_subscription_router.message(AddSubscription.min_val, F.text == 'MAX')
 @user_subscription_router.message(
-    AddSubscription.crypto or AddSubscription.min_val, F.text == "MAX")
+    AddSubscription.crypto or AddSubscription.min_val, F.text == 'MAX')
 async def add_max_price(message: types.Message, state: FSMContext):
     data = await state.get_data()
     crypto_name = data['crypto']
     await message.answer(
-        f"Введите верхнюю стоимость {crypto_name} в USD:",
+        f'Введите верхнюю стоимость {crypto_name} в USD:',
         reply_markup=types.ReplyKeyboardRemove()
     )
     await state.set_state(AddSubscription.max_val)
@@ -230,11 +230,11 @@ async def add_crypto_name(message: types.Message,
             await state.clear()
             return
 
-    price = get_crypto_price(crypto_name)
+    price = await get_crypto_price(crypto_name)
     if not price:
         await message.reply(
-            f"Не удалось получить информацию о стоимости {crypto_name}. "
-            f"Проверьте правильность названия и попробуйте снова.")
+            f'Не удалось получить информацию о стоимости {crypto_name}. '
+            f'Проверьте правильность названия и попробуйте снова.')
         return
 
     await state.update_data(crypto=crypto_name)
@@ -261,7 +261,7 @@ async def save_min_price(message: types.Message, state: FSMContext,
 
     try:
         max_price = data['max_val']
-        if min_price >= max_price:
+        if int(min_price) >= int(max_price):
             await message.answer(
                 f'MIN стоимость должна быть меньше MAX стоимости!\n'
                 f'Ваша MAX стоимость: ${max_price}.\n'
@@ -270,15 +270,15 @@ async def save_min_price(message: types.Message, state: FSMContext,
     except KeyError:
         pass
     await message.answer(
-        f"Вы подписались на стоимость {crypto_name} в USD: ${min_price}."
+        f'Вы подписались на стоимость {crypto_name} в USD: ${min_price}.'
     )
 
     try:
         data['max_val']
     except KeyError:
         await message.answer(
-            f"Хотите подписаться на MAX стоимость {crypto_name}?\n"
-            f"Если хотите продолжить, нажмите <code>MAX</code>.",
+            f'Хотите подписаться на MAX стоимость {crypto_name}?\n'
+            f'Если хотите продолжить, нажмите <code>MAX</code>.',
             parse_mode=ParseMode.HTML,
             reply_markup=reply.plus_max_price_kb
         )
@@ -293,8 +293,8 @@ async def save_min_price(message: types.Message, state: FSMContext,
             await orm_add_subscription(session, data, message)
     except Exception as error:
         await message.answer(
-            f"Error:\n"
-            f"{error}"
+            f'Error:\n'
+            f'{error}'
         )
     AddSubscription.sub_for_change = None
     await state.clear()
@@ -316,7 +316,7 @@ async def save_max_price(message: types.Message,
 
     try:
         min_price = data['min_val']
-        if max_price < min_price:
+        if int(max_price) <= int(min_price):
             await message.answer(
                 f'MAX стоимость должна быть больше MIN стоимости!\n'
                 f'Ваша MIN стоимость: ${min_price}.\n'
@@ -325,15 +325,15 @@ async def save_max_price(message: types.Message,
     except KeyError:
         pass
     await message.answer(
-        f"Вы подписались на стоимость {crypto_name} в USD: ${max_price}."
+        f'Вы подписались на стоимость {crypto_name} в USD: ${max_price}.'
     )
 
     try:
         data['min_val']
     except KeyError:
         await message.answer(
-            f"Хотите подписаться на MIN стоимость {crypto_name}?\n"
-            f"Если хотите продолжить, нажмите <code>MIN</code>.",
+            f'Хотите подписаться на MIN стоимость {crypto_name}?\n'
+            f'Если хотите продолжить, нажмите <code>MIN</code>.',
             parse_mode=ParseMode.HTML,
             reply_markup=reply.plus_min_price_kb
         )
@@ -348,8 +348,8 @@ async def save_max_price(message: types.Message,
             await orm_add_subscription(session, data, message)
     except Exception as error:
         await message.answer(
-            f"Error:\n"
-            f"{error}"
+            f'Error:\n'
+            f'{error}'
         )
     AddSubscription.sub_for_change = None
     await state.clear()

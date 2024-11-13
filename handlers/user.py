@@ -109,7 +109,7 @@ async def send_crypto_price(message: types.Message) -> types.Message:
             'и попробуйте снова.')
         return
 
-    price = get_crypto_price(crypto_name)
+    price = await get_crypto_price(crypto_name)
 
     if price:
         await message.reply(f'Стоимость {crypto_name} в USD: ${price}')
