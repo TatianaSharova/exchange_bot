@@ -46,7 +46,7 @@ async def check_prices_and_notify(session: AsyncSession, bot: Bot):
             subscriptions = subscriptions.scalars().all()
 
             for sub in subscriptions:
-                current_price = get_crypto_price(sub.crypto)
+                current_price = await get_crypto_price(sub.crypto)
                 if sub.min_val and float(current_price) <= sub.min_val:
                     last_message_about = 'MIN'
                     await send_message_or_delete_banned_user(
